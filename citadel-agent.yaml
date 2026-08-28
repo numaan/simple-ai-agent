@@ -1,0 +1,43 @@
+# Declaration for github.com/timlrx/simple-ai-agents, onboarded UNMODIFIED.
+#
+# This declares the narrow grant we intend to certify — NOT everything the code can do. The gap
+# between the two is what the scan is for: a developer's declaration is a claim, not evidence.
+metadata:
+  name: simple-ai-agents
+  owner: numaan@example.com
+  description: >-
+    Third-party LiteLLM agent framework. Declared for one model through the platform proxy;
+    the code reaches considerably further.
+spec:
+  # The code names gpt-4-1106-preview, claude-3-5-sonnet and ~10 ollama/* models across
+  # examples/. Declaring one is deliberate — every other model must surface as under_declared.
+  models:
+    - gpt-4o-mini
+  toolCalls:
+    read: []
+    write: []
+  restEndpoints:
+    # The platform proxy only. litellm's completion() defaults to calling providers DIRECTLY
+    # (api.openai.com, api.anthropic.com), which this declaration does not permit.
+    - host: litellm.litellm.svc.cluster.local
+      methods: [POST]
+      purpose: inference through the platform proxy, so every call reaches the PDP
+  secrets: []
+  limits:
+    rpm: 10
+    tpm: 20000
+    maxBudgetUsd: 2
+  trial:
+    # A trigger is required for the trial to mean anything: a trigger-less agent produces an
+    # empty observation that looks identical to a clean one, and is FLAGGED rather than passed.
+    windowSeconds: 60
+    trigger:
+      type: command
+      command:
+        - python
+        - -c
+        - |
+          from simple_ai_agents.chat_agent import ChatAgent
+          a = ChatAgent(llm_options={"model": "gpt-4o-mini",
+                                     "api_base": "http://litellm.litellm.svc.cluster.local/v1"})
+          print(a("Summarise: invoice 42, $120, due 30 days"))
